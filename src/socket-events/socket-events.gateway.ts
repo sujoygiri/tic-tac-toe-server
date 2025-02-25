@@ -28,7 +28,8 @@ export class SocketEventsGateway
   onlinePlayer: Player[] = [];
   constructor() {}
 
-  handleConnection(client: Socket, ...args: any[]) {
+  async handleConnection(client: Socket, ...args: any[]) {
+    await client.join(client.id);
     this.onlinePlayer.push({ id: client.id });
     console.log(`Client connected: ${client.id} arguments: ${args[0]}`);
   }
@@ -50,10 +51,12 @@ export class SocketEventsGateway
 
   @SubscribeMessage('cell-clicked')
   handelCellClicked(
-    @MessageBody() data: CellClickedData,
+    @MessageBody() data: CellClickedData & string,
     @ConnectedSocket() client: Socket,
   ): CellClickedData {
-    console.log(data, client.id);
+    const connectedPlayerId: string = data[1];
+    console.log(connectedPlayerId);
+    client.to(connectedPlayerId).emit('cell-clicked', data);
     return data;
   }
 }
