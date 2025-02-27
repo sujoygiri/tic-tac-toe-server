@@ -23,6 +23,7 @@ export class AuthService {
       },
     });
     console.log(userDetails);
+    console.log(signUpAuthData);
     return signUpAuthData;
   }
 }

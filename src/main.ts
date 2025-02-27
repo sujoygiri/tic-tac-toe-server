@@ -1,4 +1,6 @@
 import { NestFactory } from '@nestjs/core';
+import * as session from 'express-session';
+
 import { AppModule } from './app.module';
 
 let serverUrl: string = '';
