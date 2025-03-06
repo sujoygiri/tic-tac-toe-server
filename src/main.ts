@@ -1,46 +1,44 @@
 import { NestFactory } from '@nestjs/core';
 import * as session from 'express-session';
-import { RedisStore } from 'connect-redis';
-import { createClient } from 'redis';
+import * as connectPgSimple from 'connect-pg-simple';
 import { ConfigService } from '@nestjs/config';
 
 import { AppModule } from './app.module';
+import { DbService } from './db/db.service';
 
 let serverUrl: string = '';
+
+declare module 'express-session' {
+  interface SessionData {
+    views: number;
+  }
+}
+
+const pgSession = connectPgSimple(session);
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bodyParser: true,
-    // logger: true,
+    logger: false,
     cors: { origin: 'http://localhost:4200' },
     abortOnError: false,
   });
   const configService = app.get(ConfigService);
-  const redisClientId = configService.get<string>('REDIS_CLIENT_ID') ?? '';
   const sessionSecret = configService.get<string>('SESSION_SECRET') ?? '';
-  const redisClient = createClient({
-    url: `rediss://default:${redisClientId}@leading-alpaca-24942.upstash.io:6379`,
-  });
-  redisClient.on('connect', () => {
-    console.log('Connected');
-  });
-  redisClient.on('error', (err) => {
-    throw err;
-  });
-  await redisClient.connect();
-  const redisStore = new RedisStore({
-    client: redisClient,
-  });
+  const dbService = app.get(DbService);
   app.use(
     session({
       secret: sessionSecret,
       resave: false,
       saveUninitialized: false,
       cookie: {
-        secure: true,
+        secure: false,
         httpOnly: true,
+        maxAge: 1000 * 60 * 60 * 24 * 5,
       },
-      store: redisStore,
+      store: new pgSession({
+        pool: dbService.pool,
+      }),
     }),
   );
   await app.listen(process.env.PORT ?? 3000);

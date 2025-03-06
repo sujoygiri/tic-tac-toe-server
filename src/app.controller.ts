@@ -8,7 +8,12 @@ export class AppController {
 
   @Get()
   getHello(@Req() request: Request): string {
-    console.log(request.ip);
-    return this.appService.getHello();
+    console.log(request.session.id);
+    if (request.session.views) {
+      request.session.views += 1;
+    } else {
+      request.session.views = 1;
+    }
+    return this.appService.getHello() + '-' + request.session.views;
   }
 }
