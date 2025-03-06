@@ -1,30 +1,35 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool, PoolConfig, QueryResult } from 'pg';
 
 @Injectable()
-export class DbService implements OnModuleInit, OnModuleDestroy {
-  public pool: Pool;
+export class DbService implements OnModuleDestroy {
+  public pool: Pool = new Pool(this.poolConfig);
 
   constructor(private configService: ConfigService) {}
 
   private get poolConfig(): PoolConfig {
-    const dbName = this.configService.get<string>('POSTGRES_DB_NAME');
-    const dbRole = this.configService.get<string>('POSTGRES_DB_ROLE');
-    const dbPassword = this.configService.get<string>('POSTGRES_DB_PASS');
-    return {
-      connectionString: `postgresql://${dbRole}:${dbPassword}@ep-cool-scene-a1v2bclw.ap-southeast-1.aws.neon.tech/${dbName}?sslmode=require`,
-    };
-  }
-
-  async onModuleInit() {
-    this.pool = new Pool(this.poolConfig);
-    try {
-      await this.pool.connect();
-      console.log('PostgreSQL pool connected successfully!');
-    } catch (error) {
-      console.error('Error connecting to PostgreSQL:', error);
-      throw new Error('Failed to connect to PostgreSQL');
+    const platformStatus = this.configService.get<string>('PLATFORM_STATUS');
+    if (Number.parseInt(platformStatus ?? '1')) {
+      const dbName = this.configService.get<string>('POSTGRES_DB_NAME');
+      const dbRole = this.configService.get<string>('POSTGRES_DB_ROLE');
+      const dbPassword = this.configService.get<string>('POSTGRES_DB_PASS');
+      return {
+        connectionString: `postgresql://${dbRole}:${dbPassword}@ep-cool-scene-a1v2bclw.ap-southeast-1.aws.neon.tech/${dbName}?sslmode=require`,
+      };
+    } else {
+      const pgUser = this.configService.get<string>('PG_USER');
+      const pgPassword = this.configService.get<string>('PG_PASSWORD');
+      const pgHost = this.configService.get<string>('PG_HOST');
+      const pgPort = this.configService.get<string>('PG_PORT');
+      const pgDb = this.configService.get<string>('PG_DB');
+      return {
+        user: pgUser,
+        password: pgPassword,
+        host: pgHost,
+        port: Number.parseInt(pgPort ?? '5432'),
+        database: pgDb,
+      };
     }
   }
 

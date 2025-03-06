@@ -38,6 +38,8 @@ async function bootstrap() {
       },
       store: new pgSession({
         pool: dbService.pool,
+        schemaName: 'tic-tac-toe-schema',
+        createTableIfMissing: true,
       }),
     }),
   );

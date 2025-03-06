@@ -6,5 +6,7 @@ import { UserDto } from './dto/user.dto';
 @Injectable()
 export class AuthService {
   constructor(private configService: ConfigService) {}
-  async signUpUser(userDetails: UserDto) {}
+  signUpUser(userDetails: UserDto) {
+    return userDetails;
+  }
 }
