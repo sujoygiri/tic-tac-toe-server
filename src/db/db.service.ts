@@ -1,9 +1,14 @@
-import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool, PoolConfig, QueryResult } from 'pg';
 
 @Injectable()
-export class DbService implements OnModuleDestroy {
+export class DbService implements OnModuleInit, OnModuleDestroy {
   public pool: Pool = new Pool(this.poolConfig);
 
   constructor(private configService: ConfigService) {}
@@ -33,6 +38,10 @@ export class DbService implements OnModuleDestroy {
     }
   }
 
+  async onModuleInit() {
+    await this.initializeTables();
+  }
+
   async onModuleDestroy() {
     await this.pool.end();
   }
@@ -44,9 +53,28 @@ export class DbService implements OnModuleDestroy {
       return res;
     } catch (error) {
       console.error('Something went wrong:', error);
-      throw new Error('Something went wrong');
+      throw new InternalServerErrorException(error, {
+        description: 'Something went wrong',
+      });
     } finally {
       client.release();
+    }
+  }
+
+  async initializeTables() {
+    const createUsersTable = `CREATE TABLE IF NOT EXISTS "primary".users (
+    user_id UUID DEFAULT gen_random_uuid(),
+    name VARCHAR(30) UNIQUE NOT NULL,
+    email VARCHAR UNIQUE NOT NULL, 
+    password VARCHAR NOT NULL,
+    PRIMARY KEY (user_id)
+    )`;
+    try {
+      await this.query(createUsersTable);
+    } catch (error) {
+      throw new InternalServerErrorException(error, {
+        description: 'database initialization error',
+      });
     }
   }
 }

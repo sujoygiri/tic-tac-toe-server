@@ -4,7 +4,8 @@ export interface CellClickedData {
 }
 
 export interface UserDetails {
-  username?: string;
+  user_id: string;
+  name: string;
   email: string;
-  password: string;
+  password?: string;
 }

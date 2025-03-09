@@ -3,13 +3,16 @@ import {
   IsString,
   IsStrongPassword,
   MinLength,
+  IsOptional,
 } from 'class-validator';
 
 export class UserDto {
+  @IsOptional({ always: true })
   @IsString()
   @MinLength(3)
   name?: string;
 
+  @IsOptional({ always: true })
   @IsEmail()
   email: string;
 

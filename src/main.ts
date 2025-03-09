@@ -11,6 +11,11 @@ let serverUrl: string = '';
 declare module 'express-session' {
   interface SessionData {
     views: number;
+    userData: {
+      user_id: string;
+      name: string;
+      email: string;
+    };
   }
 }
 
@@ -20,7 +25,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bodyParser: true,
     logger: false,
-    cors: { origin: 'http://localhost:4200' },
+    cors: { origin: 'http://localhost:4200', credentials: true },
     abortOnError: false,
   });
   const configService = app.get(ConfigService);
@@ -38,7 +43,7 @@ async function bootstrap() {
       },
       store: new pgSession({
         pool: dbService.pool,
-        schemaName: 'tic-tac-toe-schema',
+        schemaName: 'primary',
         createTableIfMissing: true,
       }),
     }),
