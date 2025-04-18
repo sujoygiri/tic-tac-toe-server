@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotAcceptableException,
@@ -7,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { hashSync, compareSync } from 'bcryptjs';
 
-import { UserDto } from './dto/user.dto';
+import { UserSignInDto, UserSignUpDto } from './dto/user.dto';
 import { DbService } from '../db/db.service';
 import { UserDetails } from '../interface/common.interfaces';
 
@@ -15,10 +16,20 @@ import { UserDetails } from '../interface/common.interfaces';
 export class AuthService {
   constructor(private dbService: DbService) {}
 
-  async signUpUser(userDetails: UserDto) {
+  async signUpUser(userDetails: UserSignUpDto) {
     try {
       const { name, email, password } = userDetails;
       if (name && email && password) {
+        const isEmailExistQuery = `SELECT email FROM "primary".users WHERE users.email = $1`;
+        const isEmailExistQueryResult = await this.dbService.query(
+          isEmailExistQuery,
+          [email],
+        );
+        if (isEmailExistQueryResult.rowCount) {
+          throw new ConflictException(new Error('Email id already exist'), {
+            description: 'Email id already exist! Try to login.',
+          });
+        }
         const hashedPassword = hashSync(password);
         const userSignUpQuery = `INSERT INTO "primary".users(name, email, password) VALUES($1, $2, $3) RETURNING user_id,name,email`;
         const queryResult = await this.dbService.query(userSignUpQuery, [
@@ -43,26 +54,16 @@ export class AuthService {
     }
   }
 
-  async signInUser(userDetails: UserDto) {
+  async signInUser(userDetails: UserSignInDto) {
     try {
-      const { name, email, password } = userDetails;
-      if ((name || email) && password) {
-        const findUserQuery = `SELECT * FROM "primary".users WHERE users.name = $1 OR users.email = $2`;
-        const queryResult = await this.dbService.query(findUserQuery, [
-          name,
-          email,
-        ]);
+      const { email, password } = userDetails;
+      if (email && password) {
+        const findUserQuery = `SELECT * FROM "primary".users WHERE users.email = $1`;
+        const queryResult = await this.dbService.query(findUserQuery, [email]);
         if (queryResult.rows.length === 0) {
-          if (name) {
-            throw new NotFoundException(new Error('Name not found!'), {
-              description: 'Name not found! Create an account',
-            });
-          }
-          if (email) {
-            throw new NotFoundException(new Error('Email id not found!'), {
-              description: 'Email id not found! Create an account',
-            });
-          }
+          throw new NotFoundException(new Error('Email id not found!'), {
+            description: 'Email id not found! Create an account',
+          });
         }
         const existingUserData = <UserDetails>queryResult.rows[0];
         const isPasswordMatched = compareSync(
@@ -91,6 +92,7 @@ export class AuthService {
   }
 
   async verifyUser(sessionId: string) {
+    console.log(sessionId);
     try {
       const getUserSessionQuery = `SELECT sess FROM "primary".session WHERE session.sid = $1`;
       const queryResult = await this.dbService.query(getUserSessionQuery, [
@@ -115,7 +117,7 @@ export class AuthService {
       }
     } catch (error) {
       throw new UnauthorizedException(error, {
-        description: 'Session not found!',
+        description: 'Something went wrong!',
       });
     }
   }

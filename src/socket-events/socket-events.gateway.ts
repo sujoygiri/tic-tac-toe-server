@@ -19,6 +19,7 @@ export type Player = {
   cors: {
     origin: 'http://localhost:4200',
   },
+  namespace: '/',
 })
 export class SocketEventsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
@@ -28,19 +29,18 @@ export class SocketEventsGateway
   onlinePlayer: Player[] = [];
   constructor() {}
 
-  async handleConnection(client: Socket, ...args: any[]) {
-    await client.join(client.id);
-    this.onlinePlayer.push({ id: client.id });
-    console.log(`Client connected: ${client.id} arguments: ${args[0]}`);
+  async handleConnection(@ConnectedSocket() client: Socket) {
+    console.log(client.handshake.auth);
+
+    const authenticatedUserId: string = String(client.handshake.auth.user_id);
+    await client.join(authenticatedUserId);
+    this.onlinePlayer.push({ id: authenticatedUserId });
+    console.log(`Client connected with user id: ${authenticatedUserId}`);
   }
 
   handleDisconnect(client: Socket) {
-    console.log(this.onlinePlayer);
-    this.onlinePlayer = this.onlinePlayer.filter(
-      (player) => player.id !== client.id,
-    );
-    console.log(this.onlinePlayer);
-    console.log(`Client disconnected: ${client.id}`);
+    const authenticatedUserId: string = String(client.handshake.auth.user_id);
+    console.log(`Client disconnected with user id: ${authenticatedUserId}`);
   }
 
   @SubscribeMessage('message')

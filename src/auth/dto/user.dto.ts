@@ -3,18 +3,22 @@ import {
   IsString,
   IsStrongPassword,
   MinLength,
-  IsOptional,
+  IsNotEmpty,
 } from 'class-validator';
 
-export class UserDto {
-  @IsOptional({ always: true })
+export class UserSignInDto {
+  @IsEmail()
+  email: string;
+
+  @IsNotEmpty({ message: 'Password is required' })
+  @IsString()
+  password: string;
+}
+
+export class UserSignUpDto extends UserSignInDto {
   @IsString()
   @MinLength(3)
   name?: string;
-
-  @IsOptional({ always: true })
-  @IsEmail()
-  email: string;
 
   @IsStrongPassword({
     minLength: 8,

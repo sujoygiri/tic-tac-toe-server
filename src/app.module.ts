@@ -4,6 +4,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SocketEventsModule } from './socket-events/socket-events.module';
 import { AuthModule } from './auth/auth.module';
+import { UtilModule } from './util/util.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { AuthModule } from './auth/auth.module';
       cache: true,
       isGlobal: true,
     }),
+    UtilModule,
   ],
   controllers: [AppController],
   providers: [AppService],

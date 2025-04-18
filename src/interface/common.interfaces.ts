@@ -3,9 +3,19 @@ export interface CellClickedData {
   cellIndex: number;
 }
 
-export interface UserDetails {
+export interface UserProfile {
   user_id: string;
   name: string;
   email: string;
+}
+
+export interface UserDetails extends UserProfile {
   password?: string;
+}
+
+export interface ResponseData<T> {
+  result: T;
+  status: 'success' | 'error';
+  message?: string;
+  rows?: T[];
 }
