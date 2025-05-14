@@ -24,6 +24,7 @@ export const initializeTableHandler = async (
     await createPlayerTable();
     res.json({ msg: "Table creation successful" });
   } catch (error: any) {
+    console.log(error);
     res.json(error);
   }
   next();

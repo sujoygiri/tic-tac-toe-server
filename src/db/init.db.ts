@@ -10,7 +10,7 @@ const config: PoolConfig = {
   connectionTimeoutMillis: 2000,
 };
 
-const pool = new Pool(config);
+export const pool = new Pool(config);
 
 export const query = (text: string, params?: string[]) => {
   return pool.query(text, params);

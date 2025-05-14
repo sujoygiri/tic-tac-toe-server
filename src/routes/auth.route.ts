@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { body } from "express-validator";
-import { handelSignUp } from "../controller/auth.controller";
+import { handelSignin, handelSignUp } from "../controller/auth.controller";
+import { checkAuthorization } from "../middleware/authorize.middleware";
 
 export const authRouter = Router();
 
@@ -29,3 +30,12 @@ authRouter.post(
   passwordValidationChain(),
   handelSignUp
 );
+
+authRouter.post(
+  "/signin",
+  playerNameValidationChain(),
+  passwordValidationChain(),
+  handelSignin
+);
+
+authRouter.get("/verify", checkAuthorization);
