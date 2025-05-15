@@ -33,7 +33,7 @@ authRouter.post(
 
 authRouter.post(
   "/signin",
-  playerNameValidationChain(),
+  emailValidationChain(),
   passwordValidationChain(),
   handelSignin
 );

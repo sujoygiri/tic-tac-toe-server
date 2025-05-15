@@ -7,6 +7,7 @@ import * as db from "./db/init.db";
 import { playerRoute } from "./routes/player.route";
 import { authRouter } from "./routes/auth.route";
 import { initializeTableHandler } from "./db/init-table.db";
+import { errorHandler, notFoundHandler } from "./utils/errorHandler.util";
 
 const PORT: number = Number(process.env.SERVER_PORT || 80);
 const HOST: string = "localhost";
@@ -60,8 +61,11 @@ server.use(
   })
 );
 
-server.get("/", (req: Request, res: Response, next: NextFunction) => {
-  res.json({ msg: "Hello" });
+server.get("/", async (req: Request, res: Response, next: NextFunction) => {
+  const currentTimeQuery = await db.query("SELECT LOCALTIME, LOCALTIMESTAMP");
+  const currentTime = currentTimeQuery.rows[0];
+  const dateNTime = String(currentTime.localtimestamp);
+  res.json({ msg: "Hello", dateAndTime: dateNTime });
 });
 
 server.get("/initialize-table", initializeTableHandler);
@@ -69,6 +73,10 @@ server.get("/initialize-table", initializeTableHandler);
 server.use("/auth", authRouter);
 
 server.use("/player", playerRoute);
+
+server.use(notFoundHandler);
+
+server.use(errorHandler);
 
 server.listen(PORT, HOST, () => {
   console.log(`Server is running on ${PROTOCOL}://${HOST}:${PORT}`);

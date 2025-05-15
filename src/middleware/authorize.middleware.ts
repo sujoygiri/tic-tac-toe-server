@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 
 import { PlayerSessionData } from "../types/global.type";
+import { AppError } from "../utils/errorHandler.util";
 
 export const checkAuthorization = (
   req: Request,
@@ -12,7 +13,11 @@ export const checkAuthorization = (
     if (playerData && playerData.player_id) {
       next();
     } else {
-      const error = new Error("Session not found!");
+      const error = new AppError(
+        "Authorization failed: Player session not found or invalid.",
+        401
+      );
+      error.statusCode = 401;
       next(error);
     }
   } catch (error) {
