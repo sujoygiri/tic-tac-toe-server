@@ -5,7 +5,7 @@ const DB_SCHEMA: string = String(process.env.DB_SCHEMA);
 
 export const createPlayerTable = async () => {
   const playerTableCreationQuery = `CREATE TABLE IF NOT EXISTS ${DB_SCHEMA}.player (
-        player_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        player_id VARCHAR (10) PRIMARY KEY UNIQUE NOT NULL CHECK (LENGTH(TRIM(player_id)) = 10),
         player_name VARCHAR (50) UNIQUE NOT NULL,
         email VARCHAR (255) UNIQUE NOT NULL,
         password VARCHAR (255) UNIQUE NOT NULL,
@@ -27,5 +27,4 @@ export const initializeTableHandler = async (
     console.log(error);
     res.json(error);
   }
-  next();
 };

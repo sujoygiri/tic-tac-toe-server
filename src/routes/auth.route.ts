@@ -1,7 +1,10 @@
 import { Router } from "express";
 import { body } from "express-validator";
-import { handelSignin, handelSignUp } from "../controller/auth.controller";
-import { checkAuthorization } from "../middleware/authorize.middleware";
+import {
+  handelSignin,
+  handelSignUp,
+  handelVerification,
+} from "../controller/auth.controller";
 
 export const authRouter = Router();
 
@@ -38,4 +41,4 @@ authRouter.post(
   handelSignin
 );
 
-authRouter.get("/verify", checkAuthorization);
+authRouter.get("/verify", handelVerification);

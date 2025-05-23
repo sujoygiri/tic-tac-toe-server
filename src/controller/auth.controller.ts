@@ -1,9 +1,17 @@
 import { Request, Response, NextFunction } from "express";
 import { matchedData, validationResult } from "express-validator";
+import { nanoid, customRandom, customAlphabet } from "nanoid";
 import bcryptjs from "bcryptjs";
 
 import * as db from "../db/init.db";
-import { AuthData, Player, ResponseData } from "../types/global.type";
+import {
+  AuthData,
+  Player,
+  PlayerSessionData,
+  ResponseData,
+} from "../types/global.type";
+import { AppError } from "../utils/errorHandler.util";
+import { randomBytes } from "node:crypto";
 
 const DB_SCHEMA: string = String(process.env.DB_SCHEMA);
 
@@ -48,10 +56,14 @@ export const handelSignUp = async (
         res.status(responseData.statusCode).json(responseData);
         return;
       }
+      // create an unique number based short plater id
+      const nanoId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 10);
+      const playerUniqueId: string = nanoId();
       const hashedPassword = bcryptjs.hashSync(signUpPlayerData.password);
-      const storePlayerDataQuery = `INSERT INTO ${DB_SCHEMA}.player (player_name, email, password) VALUES($1,$2,$3) RETURNING player_id,player_name,email`;
+      const storePlayerDataQuery = `INSERT INTO ${DB_SCHEMA}.player (player_id, player_name, email, password) VALUES($1,$2,$3,$4) RETURNING player_id,player_name,email`;
       const storePlayerDataQueryResult = await db.query(storePlayerDataQuery, [
-        String(signUpPlayerData.player_name),
+        playerUniqueId,
+        signUpPlayerData.player_name || "",
         signUpPlayerData.email,
         hashedPassword,
       ]);
@@ -82,9 +94,9 @@ export const handelSignin = async (
     const result = validationResult(req);
     if (result.isEmpty()) {
       const signInPlayerData = matchedData<AuthData>(req);
-      const findPlayerNameQuery = `SELECT player_id,player_name,email,password FROM ${DB_SCHEMA}.player WHERE player.player_name = $1`;
+      const findPlayerNameQuery = `SELECT player_id,player_name,email,password FROM ${DB_SCHEMA}.player WHERE player.email = $1`;
       const findPlayerEmailQueryResult = await db.query(findPlayerNameQuery, [
-        String(signInPlayerData.player_name),
+        String(signInPlayerData.email),
       ]);
       // Execute the query to find the player by their name
       if (findPlayerEmailQueryResult.rowCount === 0) {
@@ -124,4 +136,27 @@ export const handelSignin = async (
       res.json(result.array({ onlyFirstError: true }));
     }
   } catch (error) {}
+};
+
+export const handelVerification = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const playerSessionData: PlayerSessionData | undefined =
+      req.session.playerData;
+    if (playerSessionData) {
+      const responseData: ResponseData = {
+        statusCode: 200,
+        message: "Player is authenticated",
+        data: playerSessionData,
+      };
+      res.status(responseData.statusCode).json(responseData);
+    } else {
+      next(new AppError("Player is not authenticated", 401));
+    }
+  } catch (error) {
+    next(new AppError("Internal server error", 500));
+  }
 };
