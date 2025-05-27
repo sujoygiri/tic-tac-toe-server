@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { matchedData, validationResult } from "express-validator";
-import { nanoid, customRandom, customAlphabet } from "nanoid";
+import { customAlphabet } from "nanoid";
 import bcryptjs from "bcryptjs";
 
 import * as db from "../db/init.db";
@@ -11,7 +11,6 @@ import {
   ResponseData,
 } from "../types/global.type";
 import { AppError } from "../utils/errorHandler.util";
-import { randomBytes } from "node:crypto";
 
 const DB_SCHEMA: string = String(process.env.DB_SCHEMA);
 
@@ -22,12 +21,12 @@ export const handelSignUp = async (
 ) => {
   try {
     const result = validationResult(req);
+    const signUpPlayerData = matchedData<AuthData>(req);
     if (result.isEmpty()) {
-      const signUpPlayerData = matchedData<AuthData>(req);
       // find if player name already exist or not
       const findPlayerNameQuery = `SELECT * FROM ${DB_SCHEMA}.player WHERE player.player_name = $1`;
       const findPlayerNameQueryResult = await db.query(findPlayerNameQuery, [
-        signUpPlayerData.player_name || "",
+        String(signUpPlayerData.player_name),
       ]);
       if (
         findPlayerNameQueryResult.rowCount &&
@@ -43,7 +42,7 @@ export const handelSignUp = async (
       // Check if the player's email already exists in the database
       const findPlayerEmailQuery = `SELECT * FROM ${DB_SCHEMA}.player WHERE player.email = $1`;
       const findPlayerEmailQueryResult = await db.query(findPlayerEmailQuery, [
-        signUpPlayerData.email || "",
+        signUpPlayerData.email,
       ]);
       if (
         findPlayerEmailQueryResult.rowCount &&
@@ -56,33 +55,42 @@ export const handelSignUp = async (
         res.status(responseData.statusCode).json(responseData);
         return;
       }
-      // create an unique number based short plater id
-      const nanoId = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 10);
-      const playerUniqueId: string = nanoId();
-      const hashedPassword = bcryptjs.hashSync(signUpPlayerData.password);
-      const storePlayerDataQuery = `INSERT INTO ${DB_SCHEMA}.player (player_id, player_name, email, password) VALUES($1,$2,$3,$4) RETURNING player_id,player_name,email`;
-      const storePlayerDataQueryResult = await db.query(storePlayerDataQuery, [
-        playerUniqueId,
-        signUpPlayerData.player_name || "",
-        signUpPlayerData.email,
-        hashedPassword,
-      ]);
-      if (
-        storePlayerDataQueryResult.rowCount &&
-        storePlayerDataQueryResult.rowCount > 0
-      ) {
-        const responseData: ResponseData = {
-          statusCode: 201,
-          message: "Sign up successful",
-          data: storePlayerDataQueryResult.rows[0],
-        };
-        req.session.playerData = responseData.data;
-        res.status(responseData.statusCode).json(responseData);
+      // create an unique short player id
+      if (process.env.PLAYER_ID_CHARACTERS) {
+        const nanoId = customAlphabet(process.env.PLAYER_ID_CHARACTERS, 10);
+        const playerUniqueId: string = nanoId();
+        const hashedPassword = bcryptjs.hashSync(signUpPlayerData.password);
+        const storePlayerDataQuery = `INSERT INTO ${DB_SCHEMA}.player (player_id, player_name, email, password) VALUES($1,$2,$3,$4) RETURNING player_id,player_name,email`;
+        const storePlayerDataQueryResult = await db.query(
+          storePlayerDataQuery,
+          [
+            playerUniqueId,
+            String(signUpPlayerData.player_name),
+            signUpPlayerData.email,
+            hashedPassword,
+          ]
+        );
+        if (
+          storePlayerDataQueryResult.rowCount &&
+          storePlayerDataQueryResult.rowCount > 0
+        ) {
+          const responseData: ResponseData = {
+            statusCode: 201,
+            message: "Sign up successful",
+            data: storePlayerDataQueryResult.rows[0],
+          };
+          req.session.playerData = responseData.data;
+          res.status(responseData.statusCode).json(responseData);
+        }
+      } else {
+        next(new AppError("Internal server error", 500));
       }
     } else {
       res.json(result.array({ onlyFirstError: true }));
     }
-  } catch (error: any) {}
+  } catch (error: any) {
+    next(error);
+  }
 };
 
 export const handelSignin = async (
@@ -135,7 +143,9 @@ export const handelSignin = async (
     } else {
       res.json(result.array({ onlyFirstError: true }));
     }
-  } catch (error) {}
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const handelVerification = (
