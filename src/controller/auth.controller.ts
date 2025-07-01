@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from "express";
 import { matchedData, validationResult } from "express-validator";
-import { customAlphabet } from "nanoid";
 import bcryptjs from "bcryptjs";
 
 import * as db from "../db/init.db";
@@ -57,6 +56,8 @@ export const handelSignUp = async (
       }
       // create an unique short player id
       if (process.env.PLAYER_ID_CHARACTERS) {
+        const nanoIdModule = await import("nanoid");
+        const { customAlphabet } = nanoIdModule;
         const nanoId = customAlphabet(process.env.PLAYER_ID_CHARACTERS, 10);
         const playerUniqueId: string = nanoId();
         const hashedPassword = bcryptjs.hashSync(signUpPlayerData.password);

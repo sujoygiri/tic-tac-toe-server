@@ -25,6 +25,7 @@ build/
 .vscode/
 .idea/
 *.swp
+dev.nix
 
 # OS generated files
 .DS_Store
@@ -33,3 +34,4 @@ Thumbs.db
 # Miscellaneous
 *.bak
 *.tmp
+test.http

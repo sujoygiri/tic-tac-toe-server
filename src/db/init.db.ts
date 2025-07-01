@@ -2,12 +2,15 @@ import { Pool, PoolConfig } from "pg";
 
 const config: PoolConfig = {
   host: String(process.env.DB_HOST),
-  port: Number(process.env.DB_PORT),
+  // port: Number(process.env.DB_PORT),
   user: String(process.env.DB_USER),
   password: String(process.env.DB_PASSWORD),
   database: String(process.env.DB_NAME),
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
+  ssl: {
+    rejectUnauthorized: true,
+  }
 };
 
 export const pool = new Pool(config);

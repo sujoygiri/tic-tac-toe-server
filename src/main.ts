@@ -9,7 +9,7 @@ import { authRouter } from "./routes/auth.route";
 import { initializeTableHandler } from "./db/init-table.db";
 import { errorHandler, notFoundHandler } from "./utils/errorHandler.util";
 
-const PORT: number = Number(process.env.SERVER_PORT || 80);
+const PORT: number = Number(process.env.SERVER_PORT || 3000);
 const HOST: string = "localhost";
 const PROTOCOL: string = "http";
 const server = express();
@@ -78,6 +78,6 @@ server.use(notFoundHandler);
 
 server.use(errorHandler);
 
-server.listen(PORT, HOST, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on ${PROTOCOL}://${HOST}:${PORT}`);
 });
